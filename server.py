@@ -212,7 +212,7 @@ async def generate(request: GenerateRequest):
     start = time.time()
     
     # Seed
-    seed = request.seed if request.seed is not None else torch.randint(0, 2**32 - 1, (1,)).item()
+    seed = request.seed if request.seed is not None else torch.randint(0, 2**32, (1,)).item()
     generator = torch.Generator(device=DEVICE).manual_seed(seed)
     
     # Paramètres avec fallback sur config
@@ -248,7 +248,7 @@ async def generate(request: GenerateRequest):
     buffer = io.BytesIO()
     format_map = {"png": "PNG", "jpeg": "JPEG", "webp": "WEBP"}
     img_format = format_map.get(request.output_format, "PNG")
-    image.save(buffer, format=img_format, quality=95 if img_format == "JPEG" else None)
+    image.save(buffer, format=img_format, quality=95 if img_format in ("JPEG", "WEBP") else None)
     buffer.seek(0)
     
     elapsed_ms = int((time.time() - start) * 1000)
@@ -268,7 +268,7 @@ async def generate_raw(request: GenerateRequest):
     if pipe is None:
         raise HTTPException(status_code=503, detail="Modèle non chargé")
     
-    seed = request.seed if request.seed is not None else torch.randint(0, 2**32 - 1, (1,)).item()
+    seed = request.seed if request.seed is not None else torch.randint(0, 2**32, (1,)).item()
     generator = torch.Generator(device=DEVICE).manual_seed(seed)
     
     steps = request.steps or MODEL_CONFIG["default_steps"]
@@ -300,7 +300,7 @@ async def generate_raw(request: GenerateRequest):
     }
     format_map = {"png": "PNG", "jpeg": "JPEG", "webp": "WEBP"}
     img_format = format_map.get(request.output_format, "PNG")
-    image.save(buffer, format=img_format)
+    image.save(buffer, format=img_format, quality=95 if img_format in ("JPEG", "WEBP") else None)
     buffer.seek(0)
     
     return Response(
