@@ -20,10 +20,11 @@ API:
 """
 
 import io
+import asyncio
 import base64
 import time
 import logging
-from typing import Optional
+from typing import Optional, Literal
 from contextlib import asynccontextmanager
 
 import torch
@@ -88,8 +89,8 @@ class GenerateRequest(BaseModel):
     height: int = Field(1024, ge=256, le=2048, description="Hauteur de l'image")
     steps: Optional[int] = Field(None, ge=1, le=100, description="Nombre de steps")
     guidance_scale: Optional[float] = Field(None, ge=0.0, le=20.0, description="CFG scale")
-    seed: Optional[int] = Field(None, description="Seed pour reproductibilité")
-    output_format: str = Field("png", description="Format: png, jpeg, webp")
+    seed: Optional[int] = Field(None, ge=0, le=2**32-1, description="Seed pour reproductibilité")
+    output_format: Literal["png", "jpeg", "webp"] = Field("png", description="Format: png, jpeg, webp")
 
 
 class GenerateResponse(BaseModel):
@@ -180,10 +181,12 @@ app = FastAPI(
 )
 
 # CORS pour app mobile
+# Note: allow_credentials=True with allow_origins=["*"] is invalid per CORS spec
+# and creates security vulnerabilities. Use explicit origins if credentials needed.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -212,11 +215,11 @@ async def generate(request: GenerateRequest):
     start = time.time()
     
     # Seed
-    seed = request.seed if request.seed is not None else torch.randint(0, 2**32 - 1, (1,)).item()
+    seed = request.seed if request.seed is not None else torch.randint(0, 2**32, (1,)).item()
     generator = torch.Generator(device=DEVICE).manual_seed(seed)
     
     # Paramètres avec fallback sur config
-    steps = request.steps or MODEL_CONFIG["default_steps"]
+    steps = request.steps if request.steps is not None else MODEL_CONFIG["default_steps"]
     guidance = request.guidance_scale if request.guidance_scale is not None else MODEL_CONFIG["guidance_scale"]
     
     # Construction des arguments
@@ -236,19 +239,23 @@ async def generate(request: GenerateRequest):
     if request.negative_prompt and MODEL_CONFIG["pipeline"] in ["sdxl"]:
         gen_kwargs["negative_prompt"] = request.negative_prompt
     
-    try:
+    def run_inference():
         with torch.inference_mode():
-            result = pipe(**gen_kwargs)
-            image = result.images[0]
+            return pipe(**gen_kwargs)
+
+    try:
+        # Run blocking GPU inference in thread pool to avoid blocking event loop
+        result = await asyncio.to_thread(run_inference)
+        image = result.images[0]
     except Exception as e:
         logger.error(f"Erreur génération: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Image generation failed")
     
     # Conversion en bytes
     buffer = io.BytesIO()
     format_map = {"png": "PNG", "jpeg": "JPEG", "webp": "WEBP"}
     img_format = format_map.get(request.output_format, "PNG")
-    image.save(buffer, format=img_format, quality=95 if img_format == "JPEG" else None)
+    image.save(buffer, format=img_format, quality=95 if img_format in ("JPEG", "WEBP") else None)
     buffer.seek(0)
     
     elapsed_ms = int((time.time() - start) * 1000)
@@ -268,12 +275,12 @@ async def generate_raw(request: GenerateRequest):
     if pipe is None:
         raise HTTPException(status_code=503, detail="Modèle non chargé")
     
-    seed = request.seed if request.seed is not None else torch.randint(0, 2**32 - 1, (1,)).item()
+    seed = request.seed if request.seed is not None else torch.randint(0, 2**32, (1,)).item()
     generator = torch.Generator(device=DEVICE).manual_seed(seed)
-    
-    steps = request.steps or MODEL_CONFIG["default_steps"]
+
+    steps = request.steps if request.steps is not None else MODEL_CONFIG["default_steps"]
     guidance = request.guidance_scale if request.guidance_scale is not None else MODEL_CONFIG["guidance_scale"]
-    
+
     gen_kwargs = {
         "prompt": request.prompt,
         "width": request.width,
@@ -281,17 +288,22 @@ async def generate_raw(request: GenerateRequest):
         "num_inference_steps": steps,
         "generator": generator,
     }
-    
+
     if guidance > 0:
         gen_kwargs["guidance_scale"] = guidance
-    
-    try:
+
+    def run_inference():
         with torch.inference_mode():
-            result = pipe(**gen_kwargs)
-            image = result.images[0]
+            return pipe(**gen_kwargs)
+
+    try:
+        # Run blocking GPU inference in thread pool to avoid blocking event loop
+        result = await asyncio.to_thread(run_inference)
+        image = result.images[0]
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-    
+        logger.error(f"Erreur génération: {e}")
+        raise HTTPException(status_code=500, detail="Image generation failed")
+
     buffer = io.BytesIO()
     content_type = {
         "png": "image/png",
@@ -300,7 +312,7 @@ async def generate_raw(request: GenerateRequest):
     }
     format_map = {"png": "PNG", "jpeg": "JPEG", "webp": "WEBP"}
     img_format = format_map.get(request.output_format, "PNG")
-    image.save(buffer, format=img_format)
+    image.save(buffer, format=img_format, quality=95 if img_format in ("JPEG", "WEBP") else None)
     buffer.seek(0)
     
     return Response(
