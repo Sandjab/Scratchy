@@ -213,4 +213,6 @@ config.yml
 
 # Logs
 logs/
-*.log
+
+# macOS
+.DS_Store
