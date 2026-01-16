@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "scratchy"
+version = "2.0.0"
+description = "Production-ready AI Image Generation API Server"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "fastapi>=0.109.0",
+    "uvicorn>=0.27.0",
+    "pydantic>=2.5.0",
+    "pydantic-settings>=2.1.0",
+    "sqlalchemy>=2.0.0",
+    "pyyaml>=6.0",
+    "httpx>=0.26.0",
+    "pillow>=10.0.0",
+]
+
+[project.optional-dependencies]
+ml = [
+    "torch>=2.0.0",
+    "diffusers>=0.25.0",
+    "transformers>=4.36.0",
+    "accelerate>=0.25.0",
+]
+
+[project.scripts]
+scratchy-keys = "scratchy.cli.keys:main"
+scratchy-backup = "scratchy.cli.backup:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["scratchy*"]
