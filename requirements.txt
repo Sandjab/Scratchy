@@ -2,6 +2,16 @@
 fastapi>=0.104.0
 uvicorn[standard]>=0.24.0
 pydantic>=2.0.0
+pydantic-settings>=2.0.0
+
+# Database
+sqlalchemy>=2.0.0
+
+# Configuration
+pyyaml>=6.0
+
+# HTTP Client (for webhooks)
+httpx>=0.25.0
 
 # ML / Diffusion
 torch>=2.1.0
@@ -10,9 +20,29 @@ transformers>=4.36.0
 accelerate>=0.25.0
 safetensors>=0.4.0
 
-# Optimisations (optionnel mais recommandé)
-xformers>=0.0.23  # Memory efficient attention
-sentencepiece  # Pour certains tokenizers
+# Image processing
+pillow>=10.0.0
 
-# Pour Z-Image-Turbo (installer diffusers depuis source):
+# EXIF metadata (optional)
+piexif>=1.1.3
+
+# Optimizations (optional but recommended)
+xformers>=0.0.23  # Memory efficient attention
+sentencepiece  # For certain tokenizers
+
+# Quantization (optional)
+bitsandbytes>=0.41.0  # For 8-bit and 4-bit quantization
+
+# Testing
+pytest>=7.0.0
+pytest-asyncio>=0.21.0
+pytest-cov>=4.0.0
+
+# Load testing
+locust>=2.15.0
+
+# Metrics
+prometheus-client>=0.17.0
+
+# For Z-Image-Turbo (install diffusers from source):
 # pip install git+https://github.com/huggingface/diffusers

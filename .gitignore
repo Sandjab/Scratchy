@@ -179,3 +179,38 @@ cython_debug/
 #  refer to https://docs.cursor.com/context/ignore-files
 .cursorignore
 .cursorindexingignore
+
+# Scratchy specific
+# Model weights
+models/
+*.safetensors
+*.bin
+*.pt
+*.ckpt
+
+# HuggingFace cache
+.cache/
+
+# Scratchy data directories
+/var/scratchy/
+scratchy_data/
+jobs/
+backups/
+
+# Local config (may contain secrets)
+config.yaml
+config.yml
+
+# SQLite database
+*.db
+*.db-journal
+
+# Generated images
+*.png
+*.jpg
+*.jpeg
+*.webp
+
+# Logs
+logs/
+*.log

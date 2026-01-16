@@ -1,0 +1,45 @@
+# Scratchy Configuration Example
+# Copy this file to config.yaml and customize as needed
+# Environment variables override these settings (prefix: SCRATCHY_)
+
+server:
+  host: "0.0.0.0"
+  port: 8080
+  workers: 1
+
+model:
+  # Available models: flux-schnell, flux-dev, z-turbo, sdxl
+  name: "flux-schnell"
+  # Quantization: none, 8bit, 4bit
+  quantization: "none"
+  # Device: cuda, mps, cpu
+  device: "cuda"
+
+queue:
+  max_depth: 10
+
+storage:
+  jobs_dir: "./scratchy_data/jobs"
+  jobs_ttl_hours: 1
+  db_path: "./scratchy_data/scratchy.db"
+  backup_dir: "./scratchy_data/backups"
+  backup_retention_days: 7
+
+auth:
+  # Default rate limit for new API keys (requests per minute)
+  default_rate_limit: 10
+  # Optional admin API key (leave empty to allow any authenticated key admin access)
+  # admin_key: "sk_admin_key_here"
+
+logging:
+  level: "INFO"
+  format: "json"  # json or text
+  include_prompts: false
+  retention_days: 7
+
+security:
+  # CORS origins - restrict in production
+  cors_origins:
+    - "*"
+  max_prompt_length: 2000
+  max_negative_prompt_length: 500
