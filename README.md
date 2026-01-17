@@ -1,10 +1,9 @@
-# Scratchy
-
 > [!CAUTION]
 > **Scratchy is a research project. If your name is not Jean-Paul Gavini then do not use.**
 >
 > This software is experimental, unstable, and under active development. APIs will change without notice. Features may be incomplete or broken. There is no support, no documentation guarantees, and no warranty of any kind. Use at your own risk.
 
+# Scratchy
 Production-ready AI Image Generation API Server with authentication, credit-based billing, and job management.
 
 ## Features
