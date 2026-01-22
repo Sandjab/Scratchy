@@ -24,14 +24,34 @@ class ServerSettings(BaseSettings):
 
 class ModelSettings(BaseSettings):
     """Model configuration."""
-    name: Literal["flux-schnell", "flux-dev", "z-turbo", "sdxl"] = "flux-schnell"
+    name: Literal["flux-schnell", "flux-dev", "z-turbo", "sdxl", "custom"] = "flux-schnell"
     quantization: Literal["none", "8bit", "4bit"] = "none"
     device: Literal["cuda", "mps", "cpu"] = "cuda"
     skip_load: bool = False  # Set to True to skip model loading (for testing API without ML)
 
+    # Custom model sources (only used when name="custom")
+    local_path: Optional[Path] = None          # Local model directory or .safetensors file
+    civitai_model_id: Optional[str] = None     # CivitAI model ID (e.g., "12345")
+    civitai_version_id: Optional[str] = None   # Specific CivitAI version (optional, uses latest if not set)
+    download_url: Optional[str] = None         # Direct URL to download model
+
+    # Pipeline type hint for custom models (auto-detected if not specified)
+    pipeline_type: Optional[Literal["flux", "sdxl", "sd15", "auto"]] = None
+
     @property
     def model_id(self) -> str:
-        """Get the HuggingFace model ID."""
+        """Get the HuggingFace model ID or custom model path."""
+        if self.name == "custom":
+            # For custom models, return a descriptive string
+            if self.local_path:
+                return str(self.local_path)
+            elif self.civitai_model_id:
+                return f"civitai:{self.civitai_model_id}"
+            elif self.download_url:
+                return self.download_url
+            else:
+                raise ValueError("Custom model requires local_path, civitai_model_id, or download_url")
+
         model_map = {
             "flux-schnell": "black-forest-labs/FLUX.1-schnell",
             "flux-dev": "black-forest-labs/FLUX.1-dev",
@@ -39,6 +59,13 @@ class ModelSettings(BaseSettings):
             "sdxl": "stabilityai/stable-diffusion-xl-base-1.0",
         }
         return model_map[self.name]
+
+    @field_validator("local_path", mode="before")
+    @classmethod
+    def expand_local_path(cls, v):
+        if isinstance(v, str):
+            return Path(v).expanduser()
+        return v
 
     @property
     def default_steps(self) -> int:
@@ -48,6 +75,7 @@ class ModelSettings(BaseSettings):
             "flux-dev": 28,
             "z-turbo": 8,
             "sdxl": 30,
+            "custom": 20,  # Reasonable default for custom models
         }
         return steps_map[self.name]
 
@@ -59,6 +87,7 @@ class ModelSettings(BaseSettings):
             "flux-dev": 3.5,
             "z-turbo": 1.0,
             "sdxl": 7.5,
+            "custom": 7.0,  # Reasonable default for custom models
         }
         return guidance_map[self.name]
 
@@ -70,6 +99,7 @@ class ModelSettings(BaseSettings):
             "flux-dev": (20, 50),
             "z-turbo": (4, 12),
             "sdxl": (20, 50),
+            "custom": (1, 100),  # Wide range for custom models
         }
         return ranges[self.name]
 
@@ -86,8 +116,9 @@ class StorageSettings(BaseSettings):
     db_path: Path = Path("/var/scratchy/scratchy.db")
     backup_dir: Path = Path("/var/scratchy/backups")
     backup_retention_days: int = Field(default=7, ge=1, le=30)
+    models_dir: Path = Path("./scratchy_data/models")  # Where downloaded models are stored
 
-    @field_validator("jobs_dir", "db_path", "backup_dir", mode="before")
+    @field_validator("jobs_dir", "db_path", "backup_dir", "models_dir", mode="before")
     @classmethod
     def expand_path(cls, v):
         if isinstance(v, str):

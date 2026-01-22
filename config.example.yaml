@@ -8,12 +8,29 @@ server:
   workers: 1
 
 model:
-  # Available models: flux-schnell, flux-dev, z-turbo, sdxl
+  # Available models: flux-schnell, flux-dev, z-turbo, sdxl, custom
   name: "flux-schnell"
   # Quantization: none, 8bit, 4bit
   quantization: "none"
   # Device: cuda, mps, cpu
   device: "cuda"
+
+  # === Custom Model Sources (only used when name="custom") ===
+  # Priority: local_path > civitai_model_id > download_url
+
+  # Option A: Local model path (file or diffusers directory)
+  # local_path: "D:/models/my_model.safetensors"
+  # local_path: "./scratchy_data/models/civitai/12345_67890/model.safetensors"
+
+  # Option B: CivitAI model (auto-downloads on first use)
+  # civitai_model_id: "12345"
+  # civitai_version_id: "67890"  # Optional, uses latest if not set
+
+  # Option C: Direct download URL (auto-downloads on first use)
+  # download_url: "https://example.com/model.safetensors"
+
+  # Pipeline type for custom models (auto-detected if not specified)
+  # pipeline_type: "sdxl"  # Options: flux, sdxl, sd15, auto
 
 queue:
   max_depth: 10
@@ -24,6 +41,7 @@ storage:
   db_path: "./scratchy_data/scratchy.db"
   backup_dir: "./scratchy_data/backups"
   backup_retention_days: 7
+  models_dir: "./scratchy_data/models"  # Where downloaded models are stored
 
 auth:
   # Default rate limit for new API keys (requests per minute)

@@ -9,6 +9,7 @@ Production-ready AI Image Generation API Server with authentication, credit-base
 ## Features
 
 - **Multiple Models**: FLUX.1-schnell, FLUX.1-dev, Z-Image-Turbo, SDXL
+- **Flexible Model Sources**: HuggingFace, CivitAI, local paths, direct URLs
 - **API Key Authentication**: Secure access with hashed keys
 - **Credit System**: Pay-per-image billing with refunds on failure
 - **Rate Limiting**: Per-key configurable limits
@@ -213,6 +214,26 @@ python -m scratchy.cli.backup restore scratchy_20240115_120000.db
 python -m scratchy.cli.backup cleanup --days 7
 ```
 
+### Model Management
+
+```bash
+# Download from CivitAI (by URL or ID)
+scratchy-models download https://civitai.com/models/12345
+scratchy-models download 12345 --version 67890
+
+# Download from direct URL
+scratchy-models download https://example.com/model.safetensors --name my_model
+
+# List downloaded models
+scratchy-models list
+
+# Show model info
+scratchy-models info my_model
+
+# Remove a model
+scratchy-models remove my_model --yes
+```
+
 ## Configuration
 
 Configuration is loaded in order (later overrides earlier):
@@ -267,6 +288,34 @@ SCRATCHY_QUEUE__MAX_DEPTH=10
 | FLUX.1-dev | `flux-dev` | 28 | ~16 GB | Non-commercial |
 | Z-Image-Turbo | `z-turbo` | 8 | <16 GB | Apache 2.0 |
 | SDXL | `sdxl` | 30 | ~8 GB | CreativeML |
+
+### Model Sources
+
+Beyond built-in models, you can load models from various sources:
+
+**Local Path** - Point to existing model files:
+```yaml
+model:
+  name: "custom"
+  local_path: "D:/models/my_model.safetensors"
+```
+
+**CivitAI** - Download from CivitAI (auto-downloads on first use):
+```yaml
+model:
+  name: "custom"
+  civitai_model_id: "12345"
+  civitai_version_id: "67890"  # Optional
+```
+
+**Direct URL** - Download from any URL:
+```yaml
+model:
+  name: "custom"
+  download_url: "https://example.com/model.safetensors"
+```
+
+For detailed model configuration, see [docs/MODEL_GUIDE.md](docs/MODEL_GUIDE.md).
 
 ### Quantization
 

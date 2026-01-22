@@ -46,10 +46,11 @@ async def readiness(request: Request):
     # Check database by getting engine
     db_status = "connected"
     try:
+        from sqlalchemy import text
         from scratchy.models.database import get_engine
         engine = get_engine(str(app.state.settings.storage.db_path))
         with engine.connect() as conn:
-            conn.execute("SELECT 1")
+            conn.execute(text("SELECT 1"))
     except Exception:
         db_status = "error"
 
