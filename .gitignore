@@ -214,5 +214,8 @@ config.yml
 # Logs
 logs/
 
+# Claude Code
+.claude/
+
 # macOS
 .DS_Store
