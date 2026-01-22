@@ -317,6 +317,8 @@ model:
 
 For detailed model configuration, see [docs/MODEL_GUIDE.md](docs/MODEL_GUIDE.md).
 
+For CUDA/PyTorch version compatibility, see [docs/CUDA_COMPATIBILITY.md](docs/CUDA_COMPATIBILITY.md).
+
 ### Quantization
 
 Reduce VRAM usage:
