@@ -24,17 +24,29 @@ Production-ready AI Image Generation API Server with authentication, credit-base
 ### 1. Install Dependencies
 
 ```bash
-# Create virtual environment
-python -m venv venv
-source venv/bin/activate  # Linux/Mac
-# or: venv\Scripts\activate  # Windows
+# Create virtual environment (Python 3.12 recommended)
+python -m venv .venv
+source .venv/bin/activate  # Linux/Mac
+# or: .venv\Scripts\activate  # Windows
 
-# Install dependencies
+# Install PyTorch with CUDA FIRST (adjust cu128 for your CUDA version)
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu128
+
+# Install optimizations (optional but recommended for GPU)
+pip install xformers --index-url https://download.pytorch.org/whl/cu128
+pip install triton-windows  # Windows only
+
+# Install other dependencies
 pip install -r requirements.txt
+
+# Install Scratchy
+pip install -e .
 
 # For Z-Image-Turbo (requires diffusers from source)
 pip install git+https://github.com/huggingface/diffusers
 ```
+
+See [docs/CUDA_COMPATIBILITY.md](docs/CUDA_COMPATIBILITY.md) for GPU-specific setup including flash-attention and sageattention.
 
 ### 2. Configure
 

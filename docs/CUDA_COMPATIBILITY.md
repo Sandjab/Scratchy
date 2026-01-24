@@ -29,6 +29,69 @@ Tested on Windows 11 with NVIDIA RTX 5070 Ti (16GB VRAM, sm_120 Blackwell):
 | Driver | 580.97 |
 | CUDA Toolkit | 12.8 |
 
+## CUDA 13.0/13.1 Testing Results (RTX 5070 Ti)
+
+Tested on Windows 11 with NVIDIA RTX 5070 Ti, Driver 580.97, CUDA Toolkit 13.0 and 13.1:
+
+| Component | Version | Status |
+|-----------|---------|--------|
+| Python | 3.12.10 | ✅ Working |
+| PyTorch | 2.10.0+cu130 | ✅ Working |
+| torchvision | 0.25.0+cu130 | ✅ Working |
+| torchaudio | 2.10.0+cu130 | ✅ Working |
+| CUDA available | Yes | ✅ Working |
+| triton | 3.6.0 | ✅ Working |
+| xformers | 0.0.34 | ✅ Working |
+| flash-attention | 2.8.3 | ❌ DLL load failed |
+| sageattention | 2.2.0 | ❌ DLL load failed |
+
+### Issue: Prebuilt Wheels Incompatible
+
+The prebuilt Windows wheels from [Wildminder](https://huggingface.co/Wildminder/AI-windows-whl) for flash-attention and sageattention (cu130/torch2.10.0) fail with:
+
+```
+ImportError: DLL load failed while importing flash_attn_2_cuda: The specified procedure was not found.
+```
+
+#### Root Cause: PyTorch C++ ABI Mismatch
+
+Tested with both `CUDA_PATH` and `PATH` correctly set to CUDA 13.0 - **same error persists**. This confirms the issue is **not** the CUDA toolkit version, but a C++ ABI mismatch.
+
+**Why CUDA environment variables don't help:**
+
+| Variable | Purpose | Relevance |
+|----------|---------|-----------|
+| `PATH` | Windows DLL loader finds CUDA runtime DLLs | Runtime loading |
+| `CUDA_PATH` | Apps/build tools locate CUDA installation | Building from source |
+
+PyTorch 2.10.0+cu130 **bundles its own CUDA libraries** internally. The flash-attention wheel was compiled against a different PyTorch build (likely a nightly or pre-release) with different internal C++ symbols. When the wheel tries to link against the official PyTorch release, the symbols don't match.
+
+**Keep PATH and CUDA_PATH aligned** for consistency:
+```powershell
+$env:CUDA_PATH = "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.8"
+$env:PATH = "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.8\bin;" + $env:PATH
+```
+
+### Recommendation
+
+**Use CUDA 12.8 with PyTorch 2.9.1** for full compatibility:
+- All attention libraries work (flash-attention, sageattention, xformers)
+- Stable, tested configuration
+- Keep `.venv130` for future testing when updated wheels become available
+
+### Alternative: CUDA 13.0 with xformers Only
+
+If you need PyTorch 2.10.0 features, the cu130 environment works with xformers (which provides `memory_efficient_attention`):
+
+```bash
+py -3.12 -m venv .venv130
+.venv130\Scripts\activate
+pip install torch==2.10.0 torchvision==0.25.0 torchaudio==2.10.0 --index-url https://download.pytorch.org/whl/cu130
+pip install triton-windows
+pip install xformers==0.0.34 --index-url https://download.pytorch.org/whl/cu130
+pip install -e .
+```
+
 ## RTX 50-Series (Blackwell) Specific Notes
 
 The RTX 5070, 5070 Ti, 5080, and 5090 use the **Blackwell architecture** with compute capability **sm_120**.
@@ -144,14 +207,24 @@ pip install torch torchvision torchaudio --index-url https://download.pytorch.or
 ```
 
 ### 3. DLL Load Failed for flash-attention/sageattention
-**Symptom**: `ImportError: DLL load failed while importing flash_attn_2_cuda`
+**Symptom**: `ImportError: DLL load failed while importing flash_attn_2_cuda: The specified procedure was not found`
 
-**Cause**: PyTorch CUDA version doesn't match installed CUDA Toolkit
+**Causes**:
+1. PyTorch CUDA version doesn't match installed CUDA Toolkit
+2. Prebuilt wheel was compiled against a different PyTorch build (ABI mismatch)
 
-**Solution**: Use PyTorch cu128 if your CUDA Toolkit is 12.8:
+**Solutions**:
+
+For CUDA toolkit mismatch - use matching versions:
 ```bash
 pip install torch==2.9.1 torchvision==0.24.1 torchaudio==2.9.1 --index-url https://download.pytorch.org/whl/cu128
 pip install <wheel-url-matching-cu128-and-torch-version>
+```
+
+For CUDA 13.0/13.1 with PyTorch 2.10.0 - the current Wildminder wheels have ABI issues. Use xformers instead:
+```bash
+pip install xformers==0.0.34 --index-url https://download.pytorch.org/whl/cu130
+# Skip flash-attention and sageattention until updated wheels are available
 ```
 
 ### 4. Python 3.14 Missing Wheels
