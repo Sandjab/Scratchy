@@ -24,22 +24,34 @@ Production-ready AI Image Generation API Server with authentication, credit-base
 ### 1. Install Dependencies
 
 ```bash
-# Create virtual environment (Python 3.12 recommended)
-python -m venv .venv
-source .venv/bin/activate  # Linux/Mac
-# or: .venv\Scripts\activate  # Windows
+# Create virtual environment (Python 3.12 required for GPU acceleration)
+# See docs/CUDA_COMPATIBILITY.md for details
+#
+# | Python | flash-attention | xformers |
+# |--------|-----------------|----------|
+# | 3.14   | NO              | NO       |
+# | 3.13   | Yes             | Yes      |
+# | 3.12   | Yes             | Yes      | <-- recommended
+#
+py -3.12 -m venv .venv      # Windows
+# or: python3.12 -m venv .venv  # Linux/Mac
 
-# Install PyTorch with CUDA FIRST (adjust cu128 for your CUDA version)
-pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu128
+.venv\Scripts\activate      # Windows
+# or: source .venv/bin/activate  # Linux/Mac
+
+# Install PyTorch 2.9.1 with CUDA 12.8 (verified working version)
+pip install torch==2.9.1 torchvision==0.24.1 torchaudio==2.9.1 --index-url https://download.pytorch.org/whl/cu128
 
 # Install optimizations (optional but recommended for GPU)
-pip install xformers --index-url https://download.pytorch.org/whl/cu128
+pip install xformers==0.0.33.post2 --index-url https://download.pytorch.org/whl/cu128
 pip install triton-windows  # Windows only
 
-# Install other dependencies
-pip install -r requirements.txt
+# Optional: flash-attention and sageattention for faster inference (Windows)
+# See docs/CUDA_COMPATIBILITY.md for other PyTorch/CUDA versions
+pip install https://huggingface.co/Wildminder/AI-windows-whl/resolve/main/flash_attn-2.8.3+cu128torch2.9.0cxx11abiTRUE-cp312-cp312-win_amd64.whl
+pip install https://github.com/woct0rdho/SageAttention/releases/download/v2.2.0-windows.post3/sageattention-2.2.0+cu128torch2.9.0.post3-cp39-abi3-win_amd64.whl
 
-# Install Scratchy
+# Install Scratchy (includes all dependencies)
 pip install -e .
 
 # For Z-Image-Turbo (requires diffusers from source)
