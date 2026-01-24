@@ -183,7 +183,6 @@ cython_debug/
 
 # Scratchy specific
 # Model weights
-models/
 *.safetensors
 *.bin
 *.pt
