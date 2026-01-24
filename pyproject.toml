@@ -9,6 +9,7 @@ description = "Production-ready AI Image Generation API Server"
 readme = "README.md"
 requires-python = ">=3.9"
 dependencies = [
+    # Core
     "fastapi>=0.109.0",
     "uvicorn>=0.27.0",
     "pydantic>=2.5.0",
@@ -18,17 +19,24 @@ dependencies = [
     "httpx>=0.26.0",
     "pillow>=10.0.0",
     "tqdm>=4.66.0",
+    # ML (torch/xformers installed separately with CUDA)
+    "diffusers>=0.32.0",
+    "transformers>=4.36.0",
+    "accelerate>=0.25.0",
+    "safetensors>=0.4.0",
+    # Tokenizers
+    "sentencepiece",
+    # Metrics
+    "prometheus-client>=0.17.0",
 ]
 
 [project.optional-dependencies]
-# NOTE: Install PyTorch with CUDA separately BEFORE installing [ml] extras
-# See docs/CUDA_COMPATIBILITY.md for instructions
-# Example: pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu128
-ml = [
-    # torch - install separately with CUDA support
-    "diffusers>=0.25.0",
-    "transformers>=4.36.0",
-    "accelerate>=0.25.0",
+# Dev/test dependencies only
+dev = [
+    "pytest>=7.0.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-cov>=4.0.0",
+    "locust>=2.15.0",
 ]
 
 [project.scripts]
