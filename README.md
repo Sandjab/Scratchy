@@ -23,6 +23,8 @@ Production-ready AI Image Generation API Server with authentication, credit-base
 
 ### 1. Install Dependencies
 
+**TL;DR (Windows):** `.\install.ps1` — creates venv and installs everything.
+
 ```bash
 # Create virtual environment (Python 3.12 required for GPU acceleration)
 # See docs/CUDA_COMPATIBILITY.md for details
