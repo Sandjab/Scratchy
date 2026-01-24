@@ -23,7 +23,11 @@ Production-ready AI Image Generation API Server with authentication, credit-base
 
 ### 1. Install Dependencies
 
-**TL;DR (Windows):** `.\install.ps1` — creates venv and installs everything.
+> [!TIP]
+> **TL;DR (Windows):** `.\install.ps1` — creates venv and installs everything.
+> 
+
+IF for some reason you want to do it step by step, here they are
 
 ```bash
 # Create virtual environment (Python 3.12 required for GPU acceleration)
@@ -74,8 +78,9 @@ cp config.example.yaml config.yaml
 ```bash
 python -m scratchy.cli.keys create --name "my_app" --credits 100
 ```
-
-**Save the displayed API key - it won't be shown again!**
+> [!IMPORTANT]
+> **Save the displayed API key - it won't be shown again!**
+> 
 
 ### 4. Start the Server
 
