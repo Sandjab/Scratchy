@@ -171,19 +171,21 @@ python -c "import sageattention; print('sageattention OK')"
 
 ### 6.1 Trouver le wheel exact sur Wildminder
 
-Le nom du fichier peut inclure un date-stamp (`d20260121`). Avant de lancer pip, **vérifier le nom exact** :
-
 👉 **https://huggingface.co/Wildminder/AI-windows-whl/tree/main**
 
-Rechercher dans la liste : `cu130torch2.10.0` + `cp312`  
-Le fichier devrait ressembler à :
+Rechercher dans la liste : `cu130torch2.10.0` + `cp312`. Deux variantes coexistent :
+
 ```
-flash_attn-2.8.3+cu130torch2.10.0cxx11abiTRUE-cp312-cp312-win_amd64.whl
+flash_attn-2.8.3+cu130torch2.10.0cxx11abiTRUE-cp312-cp312-win_amd64.whl              ← non-datestampé
+flash_attn-2.8.3+d20260121.cu130torch2.10.0cxx11abiTRUE-cp312-cp312-win_amd64.whl    ← datestampé (préféré)
 ```
-ou avec un date-stamp :
-```
-flash_attn-2.8.3+d20260121.cu130torch2.10.0cxx11abiTRUE-cp312-cp312-win_amd64.whl
-```
+
+> ⚠️ **Préférer la variante datestampée `+d20260121`**. Vérifié 2026-05-04 sur RTX 5070 Ti / Python 3.12 / torch 2.10.0+cu130 : le wheel non-datestampé s'installe sans erreur mais plante à l'import avec
+> ```
+> ImportError: DLL load failed while importing flash_attn_2_cuda:
+> La procédure spécifiée est introuvable.
+> ```
+> Mismatch ABI avec le binaire torch 2.10.0+cu130 publié officiellement. Le wheel datestampé `+d20260121` (build 2026-01-21) importe sans erreur.
 
 ### 6.2 Installation
 
@@ -205,6 +207,8 @@ Si le wheel Wildminder n'est plus disponible ou si l'import échoue, Flash Atten
 ```powershell
 pip install flash_attn_3 --find-links https://windreamer.github.io/flash-attention3-wheels/
 ```
+
+> Note : l'index officiel `https://download.pytorch.org/whl/flash-attn-3/` ne contient que les variantes Windows pour cu126/cu128/cu129 (pas de wheel Windows cu130 au 2026-05-04). Pour cu130 Windows il faut donc soit windreamer, soit le wheel Wildminder datestampé de la 6.2.
 
 ---
 
@@ -255,6 +259,29 @@ Garder `.venv` (cu128) quelques semaines comme filet de sécurité avant de le s
 # Quand tu es prêt à supprimer l'ancien venv :
 Remove-Item -Recurse -Force .venv
 ```
+
+### 9.1 Aligner les variables d'environnement globales sur v13.0
+
+L'installeur NVIDIA pose `CUDA_PATH` et les entrées PATH au niveau **Machine** (HKLM) avec la version v12.8. Pour faire de v13.0 le défaut sans toucher à HKLM, écraser au niveau **Utilisateur** (HKCU) — l'utilisateur prime sur la machine, et la modif ne demande pas d'admin :
+
+```powershell
+$cudaRoot = "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.0"
+$userPath = [Environment]::GetEnvironmentVariable("Path", "User")
+$entries = ($userPath -split ';' | Where-Object { $_ }) |
+           Where-Object { $_ -ne "$cudaRoot\bin" -and $_ -ne "$cudaRoot\libnvvp" }
+$newPath = (@("$cudaRoot\bin", "$cudaRoot\libnvvp") + $entries) -join ';'
+[Environment]::SetEnvironmentVariable("Path", $newPath, "User")
+[Environment]::SetEnvironmentVariable("CUDA_PATH", $cudaRoot, "User")
+```
+
+Vérifier dans un **nouveau** terminal (les sessions ouvertes ont leur env figé au démarrage et ne voient pas le changement) :
+
+```powershell
+$env:CUDA_PATH      # doit afficher ...\v13.0
+nvcc --version      # doit afficher release 13.0
+```
+
+L'entrée Machine v12.8 reste dans le PATH (en queue), donc le venv `.venv` cu128 reste utilisable si besoin.
 
 ---
 
